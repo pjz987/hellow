@@ -1,10 +1,9 @@
 const http = require('http')
 const fs = require('fs')
+const tape = require('tape')
 
-function readDb(cb) {
-    fs.readFile('db.json', (err, data) => {
-        console.log('test')
-        console.log(data.toString())
+function readDb(path, cb) {
+    fs.readFile(path, (err, data) => {
         if (err) console.log(err)
         cb(err, data)
         return JSON.parse(data.toString())
@@ -13,9 +12,10 @@ function readDb(cb) {
 
 const server = http.createServer((req, res) => {
     const url = new URL(req.url, 'http://localhost:8000/')
-    if (url.pathname === '/messages') {
+    // if (url.pathname === '/messages') {
+    if (req.method === 'GET') {
 
-        readDb((err, data) => {
+        readDb('db.json', (err, data) => {
             if (err) res.write(404)
             const messages = JSON.parse(data).messages
             messages.forEach(message => {
@@ -24,9 +24,11 @@ const server = http.createServer((req, res) => {
             res.end()
         })
     }
-    else if (url.pathname === '/newmessage') {
+    // else if (url.pathname === '/newmessage') {
+    else if (req.method === 'POST' && url.pathname === '/newmessage') {
+        console.log(req.body)
         const text = url.searchParams.get('text')
-        readDb((err, data) => {
+        readDb('db.json', (err, data) => {
             if (err) res.write(404)
             data = JSON.parse(data)
             const message = {
@@ -40,10 +42,26 @@ const server = http.createServer((req, res) => {
             const outData = JSON.stringify(data)
             fs.writeFile('db.json', outData, (err) => {
                 if (err) console.log(err)
+
+                // tape('db test', t => {
+                //     let test = undefined
+                //     let db = undefined
+                //     readDb('example.json', (err, data) => {
+                //         test = JSON.parse(data).messages
+                //         readDb('db.json', (err, data) => {
+                //             db = JSON.parse(data).messages
+                //             t.plan(db.length)
+                //             for (let i=0; i<db.length; i++) {
+                //                 t.equal(db[i].text, test[i].text)
+                //             }
+                //         })
+                //     })
+
+                // })
+
             })
             res.end()
         })
-        console.log(text)
     }
     console.log(req.method)
     console.log(url)
